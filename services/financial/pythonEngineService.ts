@@ -31,7 +31,7 @@ export async function calculateWithPython(inputs: PyInputs) {
   
   // Crear AbortController para timeout
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 segundos timeout
+  const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 segundos timeout (para dar tiempo al cold start de Render)
   
   try {
     const res = await fetch(`${baseUrl.replace(/\/$/, '')}/calculate`, {
