@@ -29,12 +29,19 @@ export async function calculateWithPython(inputs: PyInputs) {
   
   console.log('📤 Enviando a Python engine:', { url: baseUrl, payload: inputs });
   
+  // Crear AbortController para timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 segundos timeout
+  
   try {
     const res = await fetch(`${baseUrl.replace(/\/$/, '')}/calculate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(inputs),
+      signal: controller.signal, // Agregar signal para timeout
     });
+    
+    clearTimeout(timeoutId); // Cancelar timeout si llegó respuesta
     
     console.log('📥 Respuesta del servidor:', { status: res.status, ok: res.ok });
     
@@ -48,7 +55,19 @@ export async function calculateWithPython(inputs: PyInputs) {
     console.log('✅ Datos recibidos del motor Python:', data);
     return data;
   } catch (error: any) {
+    clearTimeout(timeoutId); // Asegurar limpieza del timeout
     console.error('❌ Error en calculateWithPython:', error);
+    
+    // Mejorar mensaje de error para timeout
+    if (error.name === 'AbortError') {
+      throw new Error('Timeout: El servidor Python tardó demasiado en responder. Esto puede ocurrir si el servicio está "dormido" en Render (plan gratuito). Intenta de nuevo en unos segundos.');
+    }
+    
+    // Error de red
+    if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
+      throw new Error('Error de conexión: No se pudo conectar al servidor Python. Verifica que el servicio esté disponible en Render.');
+    }
+    
     throw error;
   }
 }
