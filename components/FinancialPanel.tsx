@@ -21,6 +21,7 @@ const FinancialPanel: React.FC<{ bill: BillData }> = ({ bill }) => {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [engineUsed, setEngineUsed] = useState<'TS' | 'PY' | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
 
   // Valores convertidos según moneda seleccionada
   const capex = useMemo(() => convertCurrency(capexMXN, 'MXN', currency), [capexMXN, currency]);
@@ -35,6 +36,16 @@ const FinancialPanel: React.FC<{ bill: BillData }> = ({ bill }) => {
       if (pyUrl) {
         console.log('🐍 Usando motor Python:', pyUrl);
         setEngineUsed('PY');
+        // Warm-up: despertar servicio Render (free) antes de calcular
+        try {
+          setInfo('Despertando el servicio, puede tardar unos segundos…');
+          const controller = new AbortController();
+          const t = setTimeout(() => controller.abort(), 5000);
+          await fetch(`${pyUrl.replace(/\/$/, '')}/health`, { signal: controller.signal });
+          clearTimeout(t);
+        } catch (_) {
+          // Ignorar errores de warm-up; continuar con el cálculo
+        }
         // Construir payload eliminando undefined
         const consumoPromedio = bill.historicalConsumption?.reduce((sum, item) => sum + (item.consumptionKWh || 0), 0) / (bill.historicalConsumption?.length || 1);
         const demandaMax = bill.historicalConsumption?.reduce((max, item) => Math.max(max, item.demandKW || 0), 0);
@@ -125,6 +136,7 @@ const FinancialPanel: React.FC<{ bill: BillData }> = ({ bill }) => {
       setEngineUsed(null);
     } finally {
       setLoading(false);
+      setInfo(null);
     }
   };
 
@@ -202,7 +214,10 @@ const FinancialPanel: React.FC<{ bill: BillData }> = ({ bill }) => {
       </div>
 
       <div className="flex justify-between items-center">
-        {err && <div className="text-red-400 text-xs">{err}</div>}
+        <div className="space-y-1">
+          {info && <div className="text-xs text-neutral-300">{info}</div>}
+          {err && <div className="text-red-400 text-xs">{err}</div>}
+        </div>
         <button disabled={loading} onClick={run} className="bg-brand-yellow disabled:opacity-50 text-neutral-950 font-bold px-6 py-2 rounded-full hover:bg-yellow-300 transition-all duration-300">
           {loading ? 'Calculando…' : 'Calcular'}
         </button>
