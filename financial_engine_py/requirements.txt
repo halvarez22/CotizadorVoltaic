@@ -1,8 +1,8 @@
-pandas==2.2.2
-numpy==2.0.2
-numpy-financial==1.0.0
-pydantic==2.9.2
-pytest==8.3.3
-fastapi==0.115.5
-uvicorn==0.32.0
+pandas>=2.2.3
+numpy>=2.0.2
+numpy-financial>=1.0.0
+pydantic>=2.9.2
+pytest>=8.3.3
+fastapi>=0.115.5
+uvicorn>=0.32.0
 
