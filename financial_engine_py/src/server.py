@@ -22,11 +22,16 @@ is_production = os.getenv("ENVIRONMENT") == "production" or os.getenv("RENDER") 
 
 # Configurar CORS según entorno
 if is_production:
-    # En producción, permitir cualquier origen (o configurar dominios específicos)
-    allowed_origins = ["*"]
+    # En producción: especificar dominios explícitos (evita usar "*" con allow_credentials)
+    allowed_origins = [
+        "https://cotizador-voltaic.vercel.app",  # dominio productivo en Vercel
+    ]
+    # Permitir previews de Vercel con regex
+    allow_origin_regex = r"https://.*\.vercel\.app$"
 else:
     # En desarrollo, localhost
-    allowed_origins = ["http://localhost:3000", "http://127.0.0.1:3000", "*"]
+    allowed_origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    allow_origin_regex = None
 
 app = FastAPI(title="Financial Engine API", version="0.1.0")
 
@@ -34,7 +39,8 @@ app = FastAPI(title="Financial Engine API", version="0.1.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
-    allow_credentials=True,
+    allow_origin_regex=allow_origin_regex,
+    allow_credentials=False,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
     expose_headers=["*"],
