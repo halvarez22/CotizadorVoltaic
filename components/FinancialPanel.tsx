@@ -37,12 +37,15 @@ const FinancialPanel: React.FC<{ bill: BillData }> = ({ bill }) => {
         console.log('🐍 Usando motor Python:', pyUrl);
         setEngineUsed('PY');
         // Warm-up: despertar servicio Render (free) antes de calcular
+        // No bloqueamos si falla, solo intentamos despertar el servicio
+        setInfo('Despertando el servicio, puede tardar unos segundos…');
         try {
-          setInfo('Despertando el servicio, puede tardar unos segundos…');
-          const controller = new AbortController();
-          const t = setTimeout(() => controller.abort(), 5000);
-          await fetch(`${pyUrl.replace(/\/$/, '')}/health`, { signal: controller.signal });
-          clearTimeout(t);
+          const healthUrl = `${pyUrl.replace(/\/$/, '')}/health`;
+          // Intentar ping a /health sin bloquear (fire and forget)
+          fetch(healthUrl, { method: 'GET', signal: AbortSignal.timeout(10000) })
+            .catch(() => {
+              // Ignorar errores de warm-up; es solo para despertar el servicio
+            });
         } catch (_) {
           // Ignorar errores de warm-up; continuar con el cálculo
         }
